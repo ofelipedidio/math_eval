@@ -3,7 +3,7 @@ use anyhow::anyhow;
 
 use crate::tokenizer::Token;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Expression {
     Number(i32),
 }
@@ -34,4 +34,17 @@ impl <'a> Parser<'a> {
 
 pub fn parse_expression(tokens: &[Token]) -> Result<Expression> {
     Parser::new(tokens).parse_expression()
+}
+
+#[cfg(test)]
+mod test {
+    use super::parse_expression;
+    use super::Expression;
+    use crate::tokenizer::Token;
+
+    #[test]
+    fn test_parser_number() {
+        assert_eq!(parse_expression(&vec![Token::Number(0)]).ok(), Some(Expression::Number(0)));
+        assert_eq!(parse_expression(&vec![Token::Number(123)]).ok(), Some(Expression::Number(123)));
+    }
 }
