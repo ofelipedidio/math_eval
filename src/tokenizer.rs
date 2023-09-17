@@ -5,6 +5,7 @@ use anyhow::anyhow;
 pub enum Token {
     Number(i32),
 
+    Comma,
     Equals,
     Plus,
     LeftParenthesis,
@@ -84,6 +85,7 @@ impl <'a> Iterator for TokenStream<'a> {
         }
 
         match self.input.get(self.index)? {
+            ',' => {self.index += 1; Some(Ok(Token::Comma))},
             '=' => {self.index += 1; Some(Ok(Token::Equals))},
             '+' => {self.index += 1; Some(Ok(Token::Plus))},
             '(' => {self.index += 1; Some(Ok(Token::LeftParenthesis))},
