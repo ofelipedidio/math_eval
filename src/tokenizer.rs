@@ -1,7 +1,7 @@
 use anyhow::Result;
 use anyhow::anyhow;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Token {
     Number(i32),
 
@@ -101,3 +101,39 @@ pub fn tokenize<'a>(input: &'a [char]) -> TokenStream<'a> {
     TokenStream::new(input)
 }
 
+#[cfg(test)]
+mod test {
+    use anyhow::Result;
+    use super::tokenize;
+    use super::Token;
+
+    fn tokenize_str(str: &str) -> Result<Vec<Token>> {
+        tokenize(&str.chars().collect::<Vec<_>>()).collect()
+    }
+
+    #[test]
+    fn test_basic_tokens() {
+        assert_eq!(tokenize_str("=").ok(), Some(vec![Token::Equals]));
+        assert_eq!(tokenize_str("+").ok(), Some(vec![Token::Plus]));
+        assert_eq!(tokenize_str(",").ok(), Some(vec![Token::Comma]));
+        assert_eq!(tokenize_str("(").ok(), Some(vec![Token::LeftParenthesis]));
+        assert_eq!(tokenize_str(")").ok(), Some(vec![Token::RightParenthesis]));
+    }
+
+    #[test]
+    fn test_identifiers() {
+        assert_eq!(tokenize_str("lower_case").ok(), Some(vec![Token::Identifier("lower_case".to_string())]));
+        assert_eq!(tokenize_str("UPPER_CASE").ok(), Some(vec![Token::Identifier("UPPER_CASE".to_string())]));
+
+        assert_eq!(tokenize_str("where").ok(), Some(vec![Token::Where]));
+    }
+
+    #[test]
+    fn test_numbers() {
+        assert_eq!(tokenize_str("0").ok(), Some(vec![Token::Number(0)]));
+        assert_eq!(tokenize_str("5").ok(), Some(vec![Token::Number(5)]));
+        assert_eq!(tokenize_str("10").ok(), Some(vec![Token::Number(10)]));
+        assert_eq!(tokenize_str("21").ok(), Some(vec![Token::Number(21)]));
+        assert_eq!(tokenize_str("12345").ok(), Some(vec![Token::Number(12345)]));
+    }
+}
