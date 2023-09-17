@@ -17,7 +17,6 @@ pub enum Token {
 pub struct TokenStream<'a> {
     input: &'a [char],
     index: usize,
-    done: bool,
 }
 
 impl <'a> TokenStream<'a> {
@@ -25,7 +24,6 @@ impl <'a> TokenStream<'a> {
         TokenStream {
             input,
             index: 0,
-            done: false,
         }
     }
 
@@ -78,10 +76,6 @@ impl <'a> Iterator for TokenStream<'a> {
     type Item = Result<Token>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.done {
-            return None;
-        }
-
         loop {
             match self.input.get(self.index) {
                 Some(' ' | '\t' | '\r' | '\n') => self.index += 1,
@@ -97,10 +91,7 @@ impl <'a> Iterator for TokenStream<'a> {
             '0'..='9' => Some(self.parse_number()),
             'a'..='z' | 'A'..='Z' | '_' => Some(self.parse_identifier()),
             c => Some(Err(anyhow!("Unexpected character {:?} found while parsing a token", c))),
-        }.map(|x| x.or_else(|e| {
-            self.done = true;
-            Err(e)
-        }))
+        }
     }
 }
 
