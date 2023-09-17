@@ -64,4 +64,10 @@ mod test {
         assert_eq!(parse_expression(&vec![Token::Number(0)]).ok(), Some(Expression::Number(0)));
         assert_eq!(parse_expression(&vec![Token::Number(123)]).ok(), Some(Expression::Number(123)));
     }
+
+    #[test]
+    fn test_parser_identifier() {
+        assert_eq!(parse_expression(&vec![Token::Identifier("x".to_string())]).ok(), Some(Expression::Identifier("x".to_string())));
+        assert_eq!(parse_expression(&vec![Token::Identifier("identifier".to_string())]).ok(), Some(Expression::Identifier("identifier".to_string())));
+    }
 }
