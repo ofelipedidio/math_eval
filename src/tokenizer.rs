@@ -136,4 +136,11 @@ mod test {
         assert_eq!(tokenize_str("21").ok(), Some(vec![Token::Number(21)]));
         assert_eq!(tokenize_str("12345").ok(), Some(vec![Token::Number(12345)]));
     }
+
+    #[test]
+    fn test_sequence() {
+        assert_eq!(tokenize_str("+()").ok(), Some(vec![Token::Plus, Token::LeftParenthesis, Token::RightParenthesis]));
+        assert_eq!(tokenize_str("1+x").ok(), Some(vec![Token::Number(1), Token::Plus, Token::Identifier("x".to_string())]));
+    }
 }
+
