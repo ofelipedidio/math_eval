@@ -1,3 +1,4 @@
+use anyhow::Context;
 use anyhow::Result;
 use anyhow::anyhow;
 
@@ -6,6 +7,7 @@ use crate::tokenizer::Token;
 #[derive(Debug, PartialEq, Eq)]
 pub enum Expression {
     Number(i32),
+    Identifier(String),
 }
 
 pub struct Parser<'a> {
@@ -22,12 +24,27 @@ impl <'a> Parser<'a> {
     }
 
     fn parse_expression(&mut self) -> Result<Expression> {
+        self.parse_expression_number()
+            .or_else(|err| self.parse_expression_identifier().context(err))
+    }
+
+    fn parse_expression_number(&mut self) -> Result<Expression> {
         let token = self.input.get(self.index)
-            .ok_or(anyhow!("Could not get token").context("parsing expression"))?;
+            .ok_or(anyhow!("Could not get token").context("parsing number"))?;
 
         match token {
             Token::Number(number) => Ok(Expression::Number(*number)),
-            token => todo!("parse_expression is not implemented for {:?} yet", token),
+            token => Err(anyhow!("Expected number, found {:?}", token))
+        }
+    }
+
+    fn parse_expression_identifier(&mut self) -> Result<Expression> {
+        let token = self.input.get(self.index)
+            .ok_or(anyhow!("Could not get token").context("parsing identifier"))?;
+
+        match token {
+            Token::Identifier(identifier) => Ok(Expression::Identifier(identifier.clone())),
+            token => Err(anyhow!("Expected identifier, found {:?}", token))
         }
     }
 }
