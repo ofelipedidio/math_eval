@@ -96,7 +96,7 @@ impl <'a> Iterator for TokenStream<'a> {
             ')' => {self.index += 1; Some(Ok(Token::RightParenthesis))},
             '0'..='9' => Some(self.parse_number()),
             'a'..='z' | 'A'..='Z' | '_' => Some(self.parse_identifier()),
-            _ => Some(Err(anyhow!("Could not parse token"))),
+            c => Some(Err(anyhow!("Unexpected character {:?} found while parsing a token", c))),
         }.map(|x| x.or_else(|e| {
             self.done = true;
             Err(e)
