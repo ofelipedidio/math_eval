@@ -3,7 +3,9 @@ use anyhow::anyhow;
 
 use crate::tokenizer::Token;
 
+#[derive(Debug)]
 pub enum Expression {
+    Number(i32),
 }
 
 pub struct Parser<'a> {
@@ -20,7 +22,13 @@ impl <'a> Parser<'a> {
     }
 
     fn parse_expression(&mut self) -> Result<Expression> {
-        todo!("parse_expression is not implemented yet!")
+        let token = self.input.get(self.index)
+            .ok_or(anyhow!("Could not get token").context("parsing expression"))?;
+
+        match token {
+            Token::Number(number) => Ok(Expression::Number(*number)),
+            token => todo!("parse_expression is not implemented for {:?} yet", token),
+        }
     }
 }
 
