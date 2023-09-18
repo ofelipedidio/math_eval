@@ -16,6 +16,18 @@ macro_rules! expect {
     };
 }
 
+macro_rules! safeguard {
+    ($value:ident, $block:expr) => {
+        {
+            let value = $value;
+            $block.or_else(|e| {
+                $value = value;
+                e
+            })
+        }
+    };
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum Expression {
     Number(i32),
