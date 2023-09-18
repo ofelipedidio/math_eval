@@ -7,7 +7,10 @@ use crate::tokenizer::Token;
 macro_rules! expect {
     ($self:expr, $token:pat => $value:expr, $error:expr, $context:expr) => {
         match $self.input.get($self.index).ok_or(anyhow!("Expected {}, found EOF", $error).context($context))? {
-            $token => Ok($value),
+            $token => {
+                $self.index += 1;
+                Ok($value)
+            },
             token => Err(anyhow!("Expected {}, found {:?}", $error, token).context($context)),
         }
     };
