@@ -17,12 +17,12 @@ macro_rules! expect {
 }
 
 macro_rules! safeguard {
-    ($value:ident, $block:expr) => {
+    ($value:expr, $block:expr) => {
         {
             let value = $value;
-            $block.or_else(|e| {
+            (|| $block)().or_else(|e| {
                 $value = value;
-                e
+                Err(e)
             })
         }
     };
