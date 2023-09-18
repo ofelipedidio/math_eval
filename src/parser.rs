@@ -55,35 +55,28 @@ impl <'a> Parser<'a> {
         self.parse_following_expression(base_expression?)
     }
 
-    fn parse_following_expression(&mut self, base_expression: Expression) -> Result<Expression> {
-        match self.input.get(self.index) {
-            Some(Token::Plus) => {
-                eprintln!("a");
-                self.index += 1;
-
-                match self.parse_expression() {
-                    Ok(next) => Ok(Expression::Add(Box::new(base_expression), Box::new(next))),
-                    Err(_) => {
-                        eprintln!("b");
-                        self.index -= 1;
-                        Ok(base_expression)
-                    }
-                }
-            }
-            Some(token) => {
-                eprintln!("{:?}", token);
-                Ok(base_expression)
-            }
-            _ => Ok(base_expression),
-        }
-    }
-
     fn parse_expression_number(&mut self) -> Result<Expression> {
         expect!(self, Token::Number(number) => Expression::Number(number.clone()), "number", "Parsing number")
     }
 
     fn parse_expression_identifier(&mut self) -> Result<Expression> {
         expect!(self, Token::Identifier(identifier) => Expression::Identifier(identifier.clone()), "identifier", "Parsing identifier")
+    }
+
+    fn parse_following_expression(&mut self, base_expression: Expression) -> Result<Expression> {
+        let following_expression = self.parse_addition();
+
+        match following_expression {
+            Ok(expression) => Ok(Expression::Add(Box::new(base_expression), Box::new(expression))),
+            _ => Ok(base_expression)
+        }
+    }
+
+    fn parse_addition(&mut self) -> Result<Expression> {
+        safeguard!(self.index, {
+            expect!(self, Token::Plus => (), "'+'", "parsing fillowing expression (addition)")?;
+            self.parse_expression()
+        })
     }
 }
 
