@@ -20,6 +20,7 @@ macro_rules! expect {
 pub enum Expression {
     Number(i32),
     Identifier(String),
+    Add(Box<Expression>, Box<Expression>),
 }
 
 pub struct Parser<'a> {
@@ -36,8 +37,33 @@ impl <'a> Parser<'a> {
     }
 
     fn parse_expression(&mut self) -> Result<Expression> {
-        self.parse_expression_number()
-            .or_else(|err| self.parse_expression_identifier().context(err))
+        let base_expression = self.parse_expression_number()
+            .or_else(|err| self.parse_expression_identifier().context(err));
+
+        self.parse_following_expression(base_expression?)
+    }
+
+    fn parse_following_expression(&mut self, base_expression: Expression) -> Result<Expression> {
+        match self.input.get(self.index) {
+            Some(Token::Plus) => {
+                eprintln!("a");
+                self.index += 1;
+
+                match self.parse_expression() {
+                    Ok(next) => Ok(Expression::Add(Box::new(base_expression), Box::new(next))),
+                    Err(_) => {
+                        eprintln!("b");
+                        self.index -= 1;
+                        Ok(base_expression)
+                    }
+                }
+            }
+            Some(token) => {
+                eprintln!("{:?}", token);
+                Ok(base_expression)
+            }
+            _ => Ok(base_expression),
+        }
     }
 
     fn parse_expression_number(&mut self) -> Result<Expression> {
@@ -69,5 +95,10 @@ mod test {
     fn test_parser_identifier() {
         assert_eq!(parse_expression(&vec![Token::Identifier("x".to_string())]).ok(), Some(Expression::Identifier("x".to_string())));
         assert_eq!(parse_expression(&vec![Token::Identifier("identifier".to_string())]).ok(), Some(Expression::Identifier("identifier".to_string())));
+    }
+
+    #[test]
+    fn test_parser_following() {
+        assert_eq!(parse_expression(&vec![Token::Number(1), Token::Plus, Token::Number(1)]).ok(), Some(Expression::Add(Box::new(Expression::Number(1)), Box::new(Expression::Number(1)))));
     }
 }
