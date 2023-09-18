@@ -33,6 +33,26 @@ pub enum Expression {
     Number(i32),
     Identifier(String),
     Add(Box<Expression>, Box<Expression>),
+    Where(Box<Expression>, String, Box<Expression>)
+}
+
+enum FollowingExpression {
+    Add(Expression),
+    Where(String, Expression),
+}
+
+impl FollowingExpression {
+    fn attach_expression(self, expression: Expression) -> Expression {
+        match self {
+            FollowingExpression::Add(e) => Expression::Add(
+                Box::new(expression),
+                Box::new(e)),
+            FollowingExpression::Where(id, e) => Expression::Where(
+                Box::new(expression),
+                id,
+                Box::new(e)),
+        }
+    }
 }
 
 pub struct Parser<'a> {
@@ -64,18 +84,31 @@ impl <'a> Parser<'a> {
     }
 
     fn parse_following_expression(&mut self, base_expression: Expression) -> Result<Expression> {
-        let following_expression = self.parse_addition();
+        let following_expression = self.parse_addition()
+            .or_else(|err| self.parse_where_clause().context(err));
 
         match following_expression {
-            Ok(expression) => Ok(Expression::Add(Box::new(base_expression), Box::new(expression))),
+            Ok(expression) => Ok(expression.attach_expression(base_expression)),
             _ => Ok(base_expression)
         }
     }
 
-    fn parse_addition(&mut self) -> Result<Expression> {
+    fn parse_addition(&mut self) -> Result<FollowingExpression> {
         safeguard!(self.index, {
             expect!(self, Token::Plus => (), "'+'", "parsing fillowing expression (addition)")?;
-            self.parse_expression()
+            let expr = self.parse_expression()?;
+            Ok(FollowingExpression::Add(expr))
+        })
+    }
+
+    fn parse_where_clause(&mut self) -> Result<FollowingExpression> {
+        safeguard!(self.index, {
+            expect!(self, Token::Comma => (), "','", "parsing fillowing expression (where clause)")?;
+            expect!(self, Token::Where => (), "'where'", "parsing fillowing expression (where clause)")?;
+            let id = expect!(self, Token::Identifier(id) => id, "','", "parsing fillowing expression (where clause)")?;
+            expect!(self, Token::Equals => (), "'='", "parsing fillowing expression (where clause)")?;
+            let expr = self.parse_expression()?;
+            Ok(FollowingExpression::Where(id.clone(), expr))
         })
     }
 }
@@ -105,5 +138,8 @@ mod test {
     #[test]
     fn test_parser_following() {
         assert_eq!(parse_expression(&vec![Token::Number(1), Token::Plus, Token::Number(1)]).ok(), Some(Expression::Add(Box::new(Expression::Number(1)), Box::new(Expression::Number(1)))));
+        assert_eq!(
+            parse_expression(&vec![Token::Identifier("x".to_string()), Token::Comma, Token::Where, Token::Identifier("x".to_string()), Token::Equals, Token::Number(1)]).ok(),
+            Some(Expression::Where(Box::new(Expression::Identifier("x".to_string())), "x".to_string(), Box::new(Expression::Number(1)))));
     }
 }
