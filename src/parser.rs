@@ -4,6 +4,15 @@ use anyhow::anyhow;
 
 use crate::tokenizer::Token;
 
+macro_rules! expect {
+    ($self:expr, $token:pat => $value:expr, $error:expr, $context:expr) => {
+        match $self.input.get($self.index).ok_or(anyhow!("Expected {}, found EOF", $error).context($context))? {
+            $token => Ok($value),
+            token => Err(anyhow!("Expected {}, found {:?}", $error, token).context($context)),
+        }
+    };
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum Expression {
     Number(i32),
@@ -29,23 +38,11 @@ impl <'a> Parser<'a> {
     }
 
     fn parse_expression_number(&mut self) -> Result<Expression> {
-        let token = self.input.get(self.index)
-            .ok_or(anyhow!("Could not get token").context("parsing number"))?;
-
-        match token {
-            Token::Number(number) => Ok(Expression::Number(*number)),
-            token => Err(anyhow!("Expected number, found {:?}", token))
-        }
+        expect!(self, Token::Number(number) => Expression::Number(number.clone()), "number", "Parsing number")
     }
 
     fn parse_expression_identifier(&mut self) -> Result<Expression> {
-        let token = self.input.get(self.index)
-            .ok_or(anyhow!("Could not get token").context("parsing identifier"))?;
-
-        match token {
-            Token::Identifier(identifier) => Ok(Expression::Identifier(identifier.clone())),
-            token => Err(anyhow!("Expected identifier, found {:?}", token))
-        }
+        expect!(self, Token::Identifier(identifier) => Expression::Identifier(identifier.clone()), "identifier", "Parsing identifier")
     }
 }
 
